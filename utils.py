@@ -35,6 +35,55 @@ class OpenAIDecodingArguments(object):
     logprobs: Optional[int] = None
     echo: bool = False
 
+def openai_gpt(prompt: str, model_name='gpt-3.5-turbo', verbose: bool = False, max_attempts: int = 3) -> str:
+    """
+    This function sends a prompt to the OpenAI GPT API and returns the response.
+    It tries the creation several times (max_attempts) in case of exception.
+    If the model is text-davinci-003, it uses the Completion API, otherwise it uses the ChatCompletion API.
+
+    Args:
+        prompt (str): Prompt to send to the API.
+        config (_type_): Configuration object.
+        verbose (bool, optional): If True, print the prompt and response. Defaults to False.
+        max_attempts (int, optional): Number of attempts to make in case of exception. Defaults to 3.
+
+    Returns:
+        str: The response from the API.
+    """
+    # send the prompt to gpt and return the response
+    # try the creation several times in case of exception
+    for attempt in range(1, max_attempts + 1):
+        try:
+            messages = [
+                # {"role": "system", "content": ""},
+                {"role": "user", "content": f"{prompt}"},
+            ]
+            response = openai.ChatCompletion.create(
+                model=model_name,
+                messages=messages,
+                # max_tokens=3072,
+                # temperature=0.5,
+                # top_p=1.0,
+                # stop=["\n20", "20.", "20."]
+            )
+            choices = [choice["message"]["content"] for choice in response["choices"]]
+
+            if verbose:
+                print("*" * 20)
+                print(f"Model: {model_name}")
+                print(f"Prompt: {prompt}")
+                print(f"Chat Response: {response['choices'][0]['message']['content']}")
+
+            return choices[0]
+        except openai.error.OpenAIError as e:
+            if attempt < max_attempts:
+                print(f"Error on attempt {attempt}: {e}. Retrying...")
+                time.sleep(2)  # Wait for 2 seconds before retrying
+            else:
+                print(f"Error on attempt {attempt}: {e}. All attempts failed.")
+                # we will return None if all attempts failed because raising an exception will stop the program and we will lose all the data we have collected so far
+                return None
+
 
 def openai_completion(
     prompts: Union[str, Sequence[str], Sequence[dict[str, str]], dict[str, str]],

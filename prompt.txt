@@ -1,4 +1,4 @@
-You are asked to come up with a set of 20 diverse task instructions. These task instructions will be given to a GPT model and we will evaluate the GPT model for completing the instructions.
+You are asked to come up with a set of 5 diverse task instructions. These task instructions will be given to a GPT model and we will evaluate the GPT model for completing the instructions.
 
 Here are the requirements:
 1. Try not to repeat the verb for each instruction to maximize diversity.
@@ -11,4 +11,4 @@ Here are the requirements:
 6. Not all instructions require input. For example, when a instruction asks about some general information, "what is the highest peak in the world", it is not necssary to provide a specific context. In this case, we simply put "<noinput>" in the input field.
 7. The output should be an appropriate response to the instruction and the input. Make sure the output is less than 100 words.
 
-List of 20 tasks:
+List of 5 tasks:

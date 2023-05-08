@@ -5,7 +5,7 @@ run:
 python -m generate_instruction generate_instruction_following_data \
   --output_dir ./ \
   --num_instructions_to_generate 10 \
-  --model_name="text-davinci-003" \
+  --model_name="gpt-3.5-turbo" \
 """
 import json
 import os
@@ -121,14 +121,15 @@ def find_word_in_string(w, s):
 
 def generate_instruction_following_data(
     output_dir="./",
-    seed_tasks_path="./seed_tasks.jsonl",
-    num_instructions_to_generate=100,
+    seed_tasks_path="./seed_tasks_pytho.jsonl",
+    num_instructions_to_generate=10,
+    #model_name="gpt-3.5-turbo",
     model_name="text-davinci-003",
-    num_prompt_instructions=3,
-    request_batch_size=5,
+    num_prompt_instructions=2,
+    request_batch_size=1,
     temperature=1.0,
     top_p=1.0,
-    num_cpus=16,
+    num_cpus=8,
 ):
     seed_tasks = [json.loads(l) for l in open(seed_tasks_path, "r")]
     seed_instruction_data = [
