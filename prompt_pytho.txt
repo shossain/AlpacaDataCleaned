@@ -1,4 +1,4 @@
-You are asked to come up with a military training scenario. We are providing a sample instruction, input, and output to guide your work.
+You are asked to come up with a military training scenario. We are providing a sample instruction, input, output and location to guide your work.
  
 Here are the requirements:
   1. Make sure that the output is at least 300 words.

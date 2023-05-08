@@ -32,7 +32,7 @@ def encode_prompt(prompt_instructions):
         
         prompt += f"###\n"
         prompt += f"{scenario}\n"
-    prompt += f"###\n"
+    prompt += f"###\n\n\n"
     prompt += f"Now, generate a scenario:"
     
     return prompt
