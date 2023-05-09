@@ -28,10 +28,17 @@ def encode_prompt(prompt_instructions):
     prompt = open("./prompt_pytho.txt").read() + "\n"
 
     for idx, task_dict in enumerate(prompt_instructions):
-        scenario = task_dict["scenario"]
+        (instruction, input, output) = (
+            task_dict["instruction"],
+            task_dict["input"],
+            task_dict["output"],
+        )
         
         prompt += f"###\n"
-        prompt += f"{scenario}\n"
+        prompt += f"Instruction: {instruction}\n\n"
+        prompt += f"Input: {input}\n\n"
+        prompt += f"Output: {output}\n\n"
+
     prompt += f"###\n\n\n"
     prompt += f"Now, generate a scenario:"
     
@@ -60,7 +67,7 @@ def find_word_in_string(w, s):
 
 
 def generate_instruction_following_data(
-    output_dir="./",
+    output_dir="../alpaca-data",
     seed_tasks_path="./seed_tasks_pytho.jsonl",
     num_instructions_to_generate=3,
     model_name="gpt-3.5-turbo",
@@ -69,10 +76,13 @@ def generate_instruction_following_data(
     top_p=1.0,
     num_cpus=8,
 ):
+    run_start = time.time()
     seed_tasks = [json.loads(l) for l in open(seed_tasks_path, "r")]
     seed_instruction_data = [
         {
-            "scenario": t["scenario"],
+            "instruction": t["instruction"],
+            "input": t["input"],
+            "output": t["output"],
         }
         for t in seed_tasks
     ]
@@ -84,13 +94,13 @@ def generate_instruction_following_data(
     request_idx = 0
     # load the LM-generated instructions
     machine_instruction_data = []
-    if os.path.exists(os.path.join(output_dir, "regen.json")):
-        machine_instruction_data = utils.jload(
-            os.path.join(output_dir, "regen.json")
-        )
-        print(
-            f"Loaded {len(machine_instruction_data)} machine-generated instructions"
-        )
+    # if os.path.exists(os.path.join(output_dir, "regen.json")):
+    #     machine_instruction_data = utils.jload(
+    #         os.path.join(output_dir, "regen.json")
+    #     )
+    #     print(
+    #         f"Loaded {len(machine_instruction_data)} machine-generated instructions"
+    #     )
 
     # similarities = {}
     # scorer = rouge_scorer.RougeScorer(["rougeL"], use_stemmer=False)
@@ -143,8 +153,9 @@ def generate_instruction_following_data(
             f"Request {request_idx} took {request_duration:.2f}s, processing took {process_duration:.2f}s"
         )
         print(f"Generated {total} instructions, kept {keep} instructions")
+        
         utils.jdump(
-            machine_instruction_data, os.path.join(output_dir, "regen.json")
+            machine_instruction_data, os.path.join(output_dir, f"regen-{run_start}.json")
         )
 
 
