@@ -13,6 +13,10 @@ import tqdm
 from openai import openai_object
 import copy
 
+import anthropic
+
+claude = anthropic.Client(os.environ["ANTHROPIC_API_KEY"])
+
 StrOrOpenAIObject = Union[str, openai_object.OpenAIObject]
 
 openai_org = os.getenv("OPENAI_ORG")
@@ -35,7 +39,36 @@ class OpenAIDecodingArguments(object):
     logprobs: Optional[int] = None
     echo: bool = False
 
-def openai_gpt(prompt: str, model_name='gpt-3.5-turbo', verbose: bool = False, max_attempts: int = 3) -> str:
+def claude_gpt(prompt: str, model_name="claude-v1.3", max_tokens_to_sample = 4000) -> str:
+    """
+    This function sends a prompt to the Anthropic's Claude API and returns the response.
+    
+    Args:
+        prompt (str): Prompt to send to the API.
+        
+
+    Returns:
+        str: The response from the API.
+    """
+    # send the prompt to gpt and return the response
+    try:
+        resp = claude.completion(
+            prompt=f"{anthropic.HUMAN_PROMPT} {prompt}{anthropic.AI_PROMPT}",
+            stop_sequences=[anthropic.HUMAN_PROMPT],
+            model=model_name,
+            max_tokens_to_sample=max_tokens_to_sample,
+        )
+
+        print(f"********************** Chat Response ********************** \n\n{resp['completion']}")
+
+        return resp["completion"]
+    except Exception as e:
+        print(f"Error occured invoking Claude: {e}")
+        return None
+
+
+
+def openai_gpt(prompt: str, model_name='gpt-3.5-turbo', max_attempts: int = 3) -> str:
     """
     This function sends a prompt to the OpenAI GPT API and returns the response.
     It tries the creation several times (max_attempts) in case of exception.
@@ -68,11 +101,7 @@ def openai_gpt(prompt: str, model_name='gpt-3.5-turbo', verbose: bool = False, m
             )
             choices = [choice["message"]["content"] for choice in response["choices"]]
 
-            if verbose:
-                print("*" * 20)
-                print(f"Model: {model_name}")
-                print(f"Prompt: {prompt}")
-                print(f"Chat Response: {response['choices'][0]['message']['content']}")
+            print(f"********************** Chat Response ********************** \n\n{choices[0]}")
 
             return choices[0]
         except openai.error.OpenAIError as e:

@@ -6,6 +6,7 @@ python -m generate_instruction_pytho generate_instruction_following_data \
   --output_dir ./ \
   --num_instructions_to_generate 10 \
   --model_name="gpt-3.5-turbo" \
+  --client="claude" or "openai"  \
 """
 import json
 import os
@@ -44,14 +45,33 @@ def encode_prompt(prompt_instructions):
     
     return prompt
 
+def encode_prompt_claude(prompt_instructions):
+    """Encode multiple prompt instructions into a single string."""
+    prompt = f"Here is a sample military training scenario in <scenario> tags:\n\n<scenario>\n\n"
+
+    for idx, task_dict in enumerate(prompt_instructions):
+        (instruction, input, output) = (
+            task_dict["instruction"],
+            task_dict["input"],
+            task_dict["output"],
+        )
+        
+        prompt += f"Instruction: {instruction}\n\n"
+        prompt += f"Input: {input}\n\n"
+        prompt += f"Output: {output}\n\n"
+
+    prompt += f"</scenario>\n\n"
+    prompt += open("./prompt_pytho_claude.txt").read()
+    
+    return prompt
+
 
 def post_process_gpt3_response(num_prompt_instructions, response):
-
     splitted_data = re.split(
         f"(Instruction|Input|Output):", response
     )
     
-    print(splitted_data)
+    # print(splitted_data)
 
     inst = splitted_data[2].strip()
     input = splitted_data[4].strip()
@@ -62,11 +82,27 @@ def post_process_gpt3_response(num_prompt_instructions, response):
     ]
 
 
+def post_process_claude_response(num_prompt_instructions, response):
+    splitted_data = re.split(
+        f"<scenario>|(Instruction|Input|Output):|</scenario>", response
+    )
+    
+    # print(splitted_data)
+
+    inst = splitted_data[4].strip()
+    input = splitted_data[6].strip()
+    output = splitted_data[8].strip()
+
+    return [
+        {"instruction": inst, "input": input, "output": output}
+    ]
+
 def find_word_in_string(w, s):
     return re.compile(r"\b({0})\b".format(w), flags=re.IGNORECASE).search(s)
 
 
 def generate_instruction_following_data(
+    client,
     output_dir="../alpaca-data",
     seed_tasks_path="./seed_tasks_pytho.jsonl",
     num_instructions_to_generate=3,
@@ -119,7 +155,10 @@ def generate_instruction_following_data(
         prompt_instructions = random.sample(
             seed_instruction_data, num_prompt_instructions
         )
-        prompt = encode_prompt(prompt_instructions)
+        if client == 'openai':
+            prompt = encode_prompt(prompt_instructions)
+        else:
+            prompt = encode_prompt_claude(prompt_instructions)
         print(prompt)
         
         # decoding_args = utils.OpenAIDecodingArguments(
@@ -130,16 +169,31 @@ def generate_instruction_following_data(
         #     stop=["\n20", "20.", "20."],
         # )
         request_start = time.time()
-        result = utils.openai_gpt(
-            prompt=prompt,
-        )
+
+        if client == 'openai':
+            result = utils.openai_gpt(
+                prompt=prompt,
+            )
+        else:    
+            result = utils.claude_gpt(
+                prompt=prompt,
+            )
+
+        if result is None:
+            continue
+
         request_duration = time.time() - request_start
 
         process_start = time.time()
         instruction_data = []
-        new_instructions = post_process_gpt3_response(
-            num_prompt_instructions, result
-        )
+        if client == 'openai':
+            new_instructions = post_process_gpt3_response(
+                num_prompt_instructions, result
+            )
+        else:    
+            new_instructions = post_process_claude_response(
+                num_prompt_instructions, result
+            )
         instruction_data += new_instructions
 
         total = len(instruction_data)
@@ -155,7 +209,7 @@ def generate_instruction_following_data(
         print(f"Generated {total} instructions, kept {keep} instructions")
         
         utils.jdump(
-            machine_instruction_data, os.path.join(output_dir, f"regen-{run_start}.json")
+            machine_instruction_data, os.path.join(output_dir, f"{client}-regen-{run_start}.json")
         )
 
 
