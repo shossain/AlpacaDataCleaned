@@ -1,4 +1,4 @@
-# Alpaca dataset with Claude
+# Instruction dataset with Claude
 We used Anthropic's Claude API to generate datasets for instruction tuning. 
 
 ## Why Claude
