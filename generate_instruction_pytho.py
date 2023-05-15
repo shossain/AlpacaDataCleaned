@@ -47,9 +47,11 @@ def encode_prompt(prompt_instructions):
 
 def encode_prompt_claude(prompt_instructions):
     """Encode multiple prompt instructions into a single string."""
-    prompt = f"Here is a sample military training scenario in <scenario> tags:\n\n<scenario>\n\n"
+    prompt = f"Here are sample military training scenarios in <scenario> tags:\n\n"
 
     for idx, task_dict in enumerate(prompt_instructions):
+        prompt += "<scenario>\n\n"
+
         (instruction, input, output) = (
             task_dict["instruction"],
             task_dict["input"],
@@ -60,7 +62,8 @@ def encode_prompt_claude(prompt_instructions):
         prompt += f"Input: {input}\n\n"
         prompt += f"Output: {output}\n\n"
 
-    prompt += f"</scenario>\n\n"
+        prompt += f"</scenario>\n\n"
+        
     prompt += open("./prompt_pytho_claude.txt").read()
     
     return prompt
@@ -186,31 +189,35 @@ def generate_instruction_following_data(
 
         process_start = time.time()
         instruction_data = []
-        if client == 'openai':
-            new_instructions = post_process_gpt3_response(
-                num_prompt_instructions, result
-            )
-        else:    
-            new_instructions = post_process_claude_response(
-                num_prompt_instructions, result
-            )
-        instruction_data += new_instructions
+        try:
+            if client == 'openai':
+                new_instructions = post_process_gpt3_response(
+                    num_prompt_instructions, result
+                )
+            else:    
+                new_instructions = post_process_claude_response(
+                    num_prompt_instructions, result
+                )
+            instruction_data += new_instructions
 
-        total = len(instruction_data)
-        keep = 0
-        for instruction_data_entry in instruction_data:
-            keep += 1
-            machine_instruction_data.append(instruction_data_entry)
-            progress_bar.update(1)
-        process_duration = time.time() - process_start
-        print(
-            f"Request {request_idx} took {request_duration:.2f}s, processing took {process_duration:.2f}s"
-        )
-        print(f"Generated {total} instructions, kept {keep} instructions")
+            total = len(instruction_data)
+            keep = 0
+            for instruction_data_entry in instruction_data:
+                keep += 1
+                machine_instruction_data.append(instruction_data_entry)
+                progress_bar.update(1)
+            process_duration = time.time() - process_start
+            print(
+                f"Request {request_idx} took {request_duration:.2f}s, processing took {process_duration:.2f}s"
+            )
+            print(f"Generated {total} instructions, kept {keep} instructions")
+            
+            utils.jdump(
+                machine_instruction_data, os.path.join(output_dir, f"{client}-regen-{run_start}.json")
+            )
+        except Exception as e:
+            print(f"{e}")
         
-        utils.jdump(
-            machine_instruction_data, os.path.join(output_dir, f"{client}-regen-{run_start}.json")
-        )
 
 
 def main(task, **kwargs):

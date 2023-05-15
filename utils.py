@@ -76,9 +76,7 @@ def openai_gpt(prompt: str, model_name='gpt-3.5-turbo', max_attempts: int = 3) -
 
     Args:
         prompt (str): Prompt to send to the API.
-        config (_type_): Configuration object.
-        verbose (bool, optional): If True, print the prompt and response. Defaults to False.
-        max_attempts (int, optional): Number of attempts to make in case of exception. Defaults to 3.
+        
 
     Returns:
         str: The response from the API.
