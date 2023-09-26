@@ -15,7 +15,7 @@ import copy
 
 import anthropic
 
-claude = anthropic.Client(os.environ["ANTHROPIC_API_KEY"])
+claude = anthropic.Anthropic()
 
 StrOrOpenAIObject = Union[str, openai_object.OpenAIObject]
 
@@ -39,7 +39,7 @@ class OpenAIDecodingArguments(object):
     logprobs: Optional[int] = None
     echo: bool = False
 
-def claude_gpt(prompt: str, model_name="claude-v1.3", max_tokens_to_sample = 4000) -> str:
+def claude_gpt(prompt: str, model_name="claude-2", max_tokens_to_sample = 4000) -> str:
     """
     This function sends a prompt to the Anthropic's Claude API and returns the response.
     
@@ -52,16 +52,16 @@ def claude_gpt(prompt: str, model_name="claude-v1.3", max_tokens_to_sample = 400
     """
     # send the prompt to gpt and return the response
     try:
-        resp = claude.completion(
+        resp = claude.completions.create(
             prompt=f"{anthropic.HUMAN_PROMPT} {prompt}{anthropic.AI_PROMPT}",
             stop_sequences=[anthropic.HUMAN_PROMPT],
             model=model_name,
             max_tokens_to_sample=max_tokens_to_sample,
         )
 
-        print(f"********************** Chat Response ********************** \n\n{resp['completion']}")
+        print(f"********************** Chat Response ********************** \n\n{resp.completion}")
 
-        return resp["completion"]
+        return resp.completion
     except Exception as e:
         print(f"Error occured invoking Claude: {e}")
         return None
