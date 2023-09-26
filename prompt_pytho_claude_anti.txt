@@ -1,0 +1,17 @@
+You are asked to come up with a military training scenario.  
+
+Here are the requirements:
+  1. Take the point of view of the opposing force to US. 
+  2. It should have the instruction, input, output and location sections.
+  3. Make sure that the output is at least 350 words.
+  4. The input should be less than 30 words.
+  5. Choose a diverse geographical region.
+  6. Choose any branch from the military, for example, army, navy, air force, marines, special operations, etc.
+  7. Consider a whole range of enemies from nation-states to terrorist groups.
+  8. Choose different ranks within the military for the instruction section.
+  9. The input should be suitable for the rank in the instruction.
+  10. Make the output interesting with challenging actions and events.
+  11. Format the output nicely with newlines and bullet points.
+  12. Generate a latitude and longitude for the location.
+
+Now, generate a scenario and wrap it inside <scenario> tags.

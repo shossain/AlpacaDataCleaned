@@ -24,9 +24,9 @@ import utils
 from rouge_score import rouge_scorer
 
 
-def encode_prompt(prompt_instructions):
+def encode_prompt(prompt_instructions, prompt_path="./prompt_pytho.txt"):
     """Encode multiple prompt instructions into a single string."""
-    prompt = open("./prompt_pytho.txt").read() + "\n"
+    prompt = open().read(prompt_path) + "\n"
 
     for idx, task_dict in enumerate(prompt_instructions):
         (instruction, input, output) = (
@@ -45,7 +45,7 @@ def encode_prompt(prompt_instructions):
     
     return prompt
 
-def encode_prompt_claude(prompt_instructions):
+def encode_prompt_claude(prompt_instructions, prompt_path):
     """Encode multiple prompt instructions into a single string."""
     prompt = f"Here are sample military training scenarios in <scenario> tags:\n\n"
 
@@ -63,8 +63,8 @@ def encode_prompt_claude(prompt_instructions):
         prompt += f"Output: {output}\n\n"
 
         prompt += f"</scenario>\n\n"
-        
-    prompt += open("./prompt_pytho_claude.txt").read()
+
+    prompt += open(prompt_path).read()
     
     return prompt
 
@@ -106,6 +106,7 @@ def find_word_in_string(w, s):
 
 def generate_instruction_following_data(
     client,
+    prompt_path="./prompt_pytho_claude.txt",
     output_dir="../alpaca-data",
     seed_tasks_path="./seed_tasks_pytho.jsonl",
     num_instructions_to_generate=3,
@@ -161,7 +162,7 @@ def generate_instruction_following_data(
         if client == 'openai':
             prompt = encode_prompt(prompt_instructions)
         else:
-            prompt = encode_prompt_claude(prompt_instructions)
+            prompt = encode_prompt_claude(prompt_instructions, prompt_path)
         print(prompt)
         
         # decoding_args = utils.OpenAIDecodingArguments(
