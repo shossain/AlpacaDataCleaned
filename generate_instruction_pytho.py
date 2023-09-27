@@ -130,13 +130,13 @@ def find_word_in_string(w, s):
     return re.compile(r"\b({0})\b".format(w), flags=re.IGNORECASE).search(s)
 
 
-def get_context(file_path, page_index, page_num):
+def get_context(file_path, page_index, page_num, file_index):
     context = ""
 
     with open(file_path, 'rb') as infile:
         try:
             reader = PdfReader(infile)
-            print(f'{file_path}, pages: {len(reader.pages)}') 
+            print(f'{file_path}, pages: {len(reader.pages)} file_index:{file_index}\n') 
             page_processed = 0
 
             # Exhausted the file
@@ -172,14 +172,15 @@ def get_context(file_path, page_index, page_num):
 
     return (context, page_index)
 
-def get_input(input_data_path, file_index=-1, page_index=-1, file_paths=[], page_num=5):
+def get_input(input_data_path, file_index=-1, page_index=-1, file_paths=[], page_num=10):
 
     if file_index == -1:
         for entry in os.listdir(input_data_path):
             file_path = os.path.join(input_data_path, entry)
             if os.path.isfile(file_path):
                 file_paths.append(file_path)
-                        
+
+        file_paths.sort()
         return {
             "file_index": 0,
             "page_index": 0,
@@ -188,7 +189,7 @@ def get_input(input_data_path, file_index=-1, page_index=-1, file_paths=[], page
     
     context = ""
 
-    context, page_index = get_context(file_paths[file_index], page_index, page_num)
+    context, page_index = get_context(file_paths[file_index], page_index, page_num, file_index)
 
     # move to the next file
     if not context:
@@ -196,7 +197,7 @@ def get_input(input_data_path, file_index=-1, page_index=-1, file_paths=[], page
         if file_index == len(file_paths):
             return None
            
-        context, page_index = get_context(file_paths[file_index], 0, page_num)
+        context, page_index = get_context(file_paths[file_index], 0, page_num, file_index)
     
     return {
         "file_index": file_index,
@@ -214,6 +215,7 @@ def generate_instruction_following_data(
     seed_tasks_path="./seed_tasks_pytho.jsonl",
     is_question=False,
     num_instructions_to_generate=3,
+    output_batch_size=100,
     model_name="claude-2.0",
     num_prompt_instructions=1,
     temperature=1.0,
@@ -237,7 +239,6 @@ def generate_instruction_following_data(
     os.makedirs(output_dir, exist_ok=True)
     request_idx = 0
     # load the LM-generated instructions
-    machine_instruction_data = []
     # if os.path.exists(os.path.join(output_dir, "regen.json")):
     #     machine_instruction_data = utils.jload(
     #         os.path.join(output_dir, "regen.json")
@@ -251,16 +252,20 @@ def generate_instruction_following_data(
 
     # now let's generate new instructions!
     progress_bar = tqdm.tqdm(total=num_instructions_to_generate)
-    if machine_instruction_data:
-        progress_bar.update(len(machine_instruction_data))
-
+    
     if is_question:
         input_result = get_input(input_data_path)
     
     # for questions, exhaust the input set
-    while len(machine_instruction_data) < num_instructions_to_generate or is_question:
+    total_generated_results = 0
+    batch_total = 0
+    batch_id = 0
+    machine_instruction_data = []
+
+    while total_generated_results < num_instructions_to_generate or is_question:
         request_idx += 1
 
+        
         batch_inputs = []
         # only sampling from the seed tasks
         prompt_instructions = random.sample(
@@ -333,8 +338,16 @@ def generate_instruction_following_data(
             print(f"Generated {total} instructions, kept {keep} instructions")
             
             utils.jdump(
-                machine_instruction_data, os.path.join(output_dir, f"{client}-regen-{run_start}.json")
+                machine_instruction_data, os.path.join(output_dir, f"{client}-batch-{run_start}-gen-{batch_id}.json")
             )
+
+            total_generated_results += keep
+            batch_total += keep
+
+            if batch_total >= output_batch_size:
+                batch_id += 1
+                batch_total = 0
+            
         except Exception as e:
             print(f"{e}")
         

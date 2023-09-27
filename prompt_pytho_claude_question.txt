@@ -1,4 +1,4 @@
-You are asked to come up with 5 questions related to the <context> provided.  
+You are asked to come up with 3 questions related to the <context> provided.  
 
 Here are some requirements:
   1. Output each question in a separate line wrapped inside <question> tags.
