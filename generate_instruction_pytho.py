@@ -68,6 +68,22 @@ def encode_prompt_claude(prompt_instructions, prompt_path):
     
     return prompt
 
+def encode_prompt_claude_question(prompt_context, prompt_path):
+    """Encode multiple prompt instructions into a single string."""
+    prompt = f"Here are sample military training scenarios in <scenario> tags:\n\n"
+
+    prompt = open(prompt_path).read()
+    
+    prompt += f"""
+<context>
+{prompt_context}
+</context>
+
+Now, generate the questions.
+"""
+    
+    return prompt
+
 
 def post_process_gpt3_response(num_prompt_instructions, response):
     splitted_data = re.split(
@@ -100,6 +116,15 @@ def post_process_claude_response(num_prompt_instructions, response):
         {"instruction": inst, "input": input, "output": output}
     ]
 
+def post_process_claude_question(num_prompt_instructions, response):
+    matches = re.findall(f"<question>(.*)</question>", response)
+
+    result = []
+    for m in matches:
+        result.append(m.strip())
+
+    return result
+
 def find_word_in_string(w, s):
     return re.compile(r"\b({0})\b".format(w), flags=re.IGNORECASE).search(s)
 
@@ -109,8 +134,9 @@ def generate_instruction_following_data(
     prompt_path="./prompt_pytho_claude.txt",
     output_dir="../alpaca-data",
     seed_tasks_path="./seed_tasks_pytho.jsonl",
+    is_question=False,
     num_instructions_to_generate=3,
-    model_name="gpt-3.5-turbo",
+    model_name="claude-2.0",
     num_prompt_instructions=1,
     temperature=1.0,
     top_p=1.0,
@@ -162,7 +188,10 @@ def generate_instruction_following_data(
         if client == 'openai':
             prompt = encode_prompt(prompt_instructions)
         else:
-            prompt = encode_prompt_claude(prompt_instructions, prompt_path)
+            if is_question:
+                prompt = encode_prompt_claude_question("Hi there", prompt_path)
+            else:
+                prompt = encode_prompt_claude(prompt_instructions, prompt_path)
         print(prompt)
         
         # decoding_args = utils.OpenAIDecodingArguments(
@@ -195,10 +224,15 @@ def generate_instruction_following_data(
                 new_instructions = post_process_gpt3_response(
                     num_prompt_instructions, result
                 )
-            else:    
-                new_instructions = post_process_claude_response(
-                    num_prompt_instructions, result
-                )
+            else:  
+                if is_question:
+                    new_instructions = post_process_claude_question(
+                        num_prompt_instructions, result
+                    ) 
+                else:     
+                    new_instructions = post_process_claude_response(
+                        num_prompt_instructions, result
+                    )
             instruction_data += new_instructions
 
             total = len(instruction_data)

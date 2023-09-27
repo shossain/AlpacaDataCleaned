@@ -1,0 +1,5 @@
+You are asked to come up with 10 questions related to the <context> provided.  
+Output each question in a separate line wrapped inside <question> tags.
+
+Here is the <context>:
+
