@@ -22,6 +22,7 @@ import numpy as np
 import tqdm
 import utils
 from rouge_score import rouge_scorer
+from PyPDF2 import PdfReader
 
 
 def encode_prompt(prompt_instructions, prompt_path="./prompt_pytho.txt"):
@@ -129,9 +130,86 @@ def find_word_in_string(w, s):
     return re.compile(r"\b({0})\b".format(w), flags=re.IGNORECASE).search(s)
 
 
+def get_context(file_path, page_index, page_num):
+    context = ""
+
+    with open(file_path, 'rb') as infile:
+        try:
+            reader = PdfReader(infile)
+            print(f'{file_path}, pages: {len(reader.pages)}') 
+            page_processed = 0
+
+            # Exhausted the file
+            if (page_index + page_num) >= len(reader.pages):
+                return (None, None)
+
+            for page in reader.pages[page_index : (page_index + page_num)]:            
+                page_content = page.extract_text().strip()
+
+                if (page_content.startswith("References") 
+                    or page_content.startswith("Index")
+                    or page_content.startswith("Source Notes")
+                    or page_content.startswith("Glossary")):
+                    #or page_content.startswith("Notes")):
+
+                    return (None, None)
+
+                # large page and not a menu
+                if len(page_content) > 600 and page_content.count('.........................') < 5:   
+                    page_processed = page_processed + 1
+                    context += f"\n{page_content}"
+                                
+
+            print(f"\n\nProcessed: {page_processed}\n\n")
+            
+        except Exception as e:
+            print("File: ", file_path)
+            print("The error is: ", e)
+
+
+
+    page_index += page_num
+
+    return (context, page_index)
+
+def get_input(input_data_path, file_index=-1, page_index=-1, file_paths=[], page_num=5):
+
+    if file_index == -1:
+        for entry in os.listdir(input_data_path):
+            file_path = os.path.join(input_data_path, entry)
+            if os.path.isfile(file_path):
+                file_paths.append(file_path)
+                        
+        return {
+            "file_index": 0,
+            "page_index": 0,
+            "file_paths": file_paths,
+        }
+    
+    context = ""
+
+    context, page_index = get_context(file_paths[file_index], page_index, page_num)
+
+    # move to the next file
+    if not context:
+        file_index += 1
+        if file_index == len(file_paths):
+            return None
+           
+        context, page_index = get_context(file_paths[file_index], 0, page_num)
+    
+    return {
+        "file_index": file_index,
+        "page_index": page_index,
+        "file_paths": file_paths,
+        "context": context,
+    }
+
+
 def generate_instruction_following_data(
     client,
     prompt_path="./prompt_pytho_claude.txt",
+    input_data_path="../data/pdfs_copy",
     output_dir="../alpaca-data",
     seed_tasks_path="./seed_tasks_pytho.jsonl",
     is_question=False,
@@ -176,8 +254,11 @@ def generate_instruction_following_data(
     if machine_instruction_data:
         progress_bar.update(len(machine_instruction_data))
 
+    if is_question:
+        input_result = get_input(input_data_path)
     
-    while len(machine_instruction_data) < num_instructions_to_generate:
+    # for questions, exhaust the input set
+    while len(machine_instruction_data) < num_instructions_to_generate or is_question:
         request_idx += 1
 
         batch_inputs = []
@@ -189,7 +270,11 @@ def generate_instruction_following_data(
             prompt = encode_prompt(prompt_instructions)
         else:
             if is_question:
-                prompt = encode_prompt_claude_question("Hi there", prompt_path)
+                input_result = get_input(
+                    input_data_path, input_result["file_index"], input_result["page_index"], input_result["file_paths"])
+                if not input_result:
+                    return
+                prompt = encode_prompt_claude_question(input_result["context"], prompt_path)
             else:
                 prompt = encode_prompt_claude(prompt_instructions, prompt_path)
         print(prompt)
