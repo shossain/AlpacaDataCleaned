@@ -59,7 +59,7 @@ def claude_gpt(prompt: str, model_name="claude-2", max_tokens_to_sample = 4000) 
             max_tokens_to_sample=max_tokens_to_sample,
         )
 
-        print(f"********************** Chat Response ********************** \n\n{resp.completion}")
+        print(f"********************** Chat Response **********************\n\n{resp.completion}")
 
         return resp.completion
     except Exception as e:
@@ -99,7 +99,7 @@ def openai_gpt(prompt: str, model_name='gpt-3.5-turbo', max_attempts: int = 3) -
             )
             choices = [choice["message"]["content"] for choice in response["choices"]]
 
-            print(f"********************** Chat Response ********************** \n\n{choices[0]}")
+            print(f"********************** Chat Response **********************\n\n{choices[0]}")
 
             return choices[0]
         except openai.error.OpenAIError as e:
