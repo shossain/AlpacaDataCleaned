@@ -3,8 +3,8 @@ You are asked to come up with 3 questions related to the <context> provided.
 Here are some requirements:
   1. Output each question in a separate line wrapped inside <question> tags.
   2. Limit each question within 5-10 words.
-  3. Each question should generate at least 1000 word answer.
-  4. Do not refer to the context in your question as "this article".
+  3. Each question should trigger a long answer if asked to a language model.
+  4. Do not refer to the context in your question as "this article" or "this publication" or anything similar.
 
 Here is the <context>:
 

@@ -136,7 +136,7 @@ def get_context(file_path, page_index, page_num, file_index):
     with open(file_path, 'rb') as infile:
         try:
             reader = PdfReader(infile)
-            print(f'{file_path}, pages: {len(reader.pages)} file_index:{file_index}\n') 
+            print(f'\n{file_path}, pages: {len(reader.pages)} file_index:{file_index}\n') 
             page_processed = 0
 
             # Exhausted the file
@@ -282,7 +282,7 @@ def generate_instruction_following_data(
                 prompt = encode_prompt_claude_question(input_result["context"], prompt_path)
             else:
                 prompt = encode_prompt_claude(prompt_instructions, prompt_path)
-        print(prompt)
+        # print(prompt)
         
         # decoding_args = utils.OpenAIDecodingArguments(
         #     temperature=temperature,
@@ -338,7 +338,7 @@ def generate_instruction_following_data(
             print(f"Generated {total} instructions, kept {keep} instructions")
             
             utils.jdump(
-                machine_instruction_data, os.path.join(output_dir, f"{client}-batch-{run_start}-gen-{batch_id}.json")
+                machine_instruction_data, os.path.join(output_dir, f"{client}-run-{run_start}-batch-{batch_id}.json")
             )
 
             total_generated_results += keep
@@ -347,6 +347,7 @@ def generate_instruction_following_data(
             if batch_total >= output_batch_size:
                 batch_id += 1
                 batch_total = 0
+                machine_instruction_data = []
             
         except Exception as e:
             print(f"{e}")
