@@ -136,7 +136,7 @@ def get_context(file_path, page_index, page_num, file_index):
     with open(file_path, 'rb') as infile:
         try:
             reader = PdfReader(infile)
-            print(f'\n{file_path}, pages: {len(reader.pages)} file_index:{file_index}\n') 
+            print(f'\n{file_path}, pages: {len(reader.pages)} file_index: {file_index}\n') 
             page_processed = 0
 
             # Exhausted the file
@@ -198,6 +198,9 @@ def get_input(input_data_path, file_index=-1, page_index=-1, file_paths=[], page
             return None
            
         context, page_index = get_context(file_paths[file_index], 0, page_num, file_index)
+
+    if not context:
+        context, page_index = ("", 0)       
     
     return {
         "file_index": file_index,
@@ -217,6 +220,7 @@ def generate_instruction_following_data(
     num_instructions_to_generate=3,
     output_batch_size=100,
     model_name="claude-2.0",
+    start_file_index=0,
     num_prompt_instructions=1,
     temperature=1.0,
     top_p=1.0,
@@ -255,6 +259,7 @@ def generate_instruction_following_data(
     
     if is_question:
         input_result = get_input(input_data_path)
+        input_result["file_index"] = start_file_index
     
     # for questions, exhaust the input set
     total_generated_results = 0
