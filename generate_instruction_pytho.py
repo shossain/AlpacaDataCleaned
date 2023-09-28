@@ -71,8 +71,6 @@ def encode_prompt_claude(prompt_instructions, prompt_path):
 
 def encode_prompt_claude_question(prompt_context, prompt_path):
     """Encode multiple prompt instructions into a single string."""
-    prompt = f"Here are sample military training scenarios in <scenario> tags:\n\n"
-
     prompt = open(prompt_path).read()
     
     prompt += f"""
@@ -85,6 +83,17 @@ Now, generate the questions.
     
     return prompt
 
+def encode_prompt_claude_answer(question, prompt_path):
+    """Encode multiple prompt instructions into a single string."""
+    context_dict =  utils.get_context(question)
+    print(context_dict["context_log"])
+
+    prompt = f"""Here is a set of contexts for the question I am going to ask next.
+{context_dict['context']}
+
+{open(prompt_path).read()}{question}
+"""    
+    return prompt
 
 def post_process_gpt3_response(num_prompt_instructions, response):
     splitted_data = re.split(
@@ -125,6 +134,11 @@ def post_process_claude_question(num_prompt_instructions, response):
         result.append(m.strip())
 
     return result
+
+def post_process_claude_answer(question, response, prompt):
+    return [
+        {"question": question, "answer": response.strip(), "prompt": prompt}
+    ]
 
 def find_word_in_string(w, s):
     return re.compile(r"\b({0})\b".format(w), flags=re.IGNORECASE).search(s)
@@ -217,6 +231,7 @@ def generate_instruction_following_data(
     output_dir="../alpaca-data",
     seed_tasks_path="./seed_tasks_pytho.jsonl",
     is_question=False,
+    is_answer=False,
     num_instructions_to_generate=3,
     output_batch_size=100,
     model_name="claude-2.0",
@@ -260,16 +275,31 @@ def generate_instruction_following_data(
     if is_question:
         input_result = get_input(input_data_path)
         input_result["file_index"] = start_file_index
+
+    if is_answer:
+        question_path_index = -1
+        question_paths = os.listdir(input_data_path)
+        question_paths.sort()
+        questions = []
     
     # for questions, exhaust the input set
     total_generated_results = 0
     batch_total = 0
     batch_id = 0
     machine_instruction_data = []
+    
 
-    while total_generated_results < num_instructions_to_generate or is_question:
+    while total_generated_results < num_instructions_to_generate or is_question or is_answer:
         request_idx += 1
-
+        if is_answer and len(questions) == 0:
+            question_path_index += 1
+            if question_path_index >= len(question_paths):
+                return
+            
+            question_file = os.path.join(input_data_path, question_paths[question_path_index])
+            questions = json.loads(question_file)
+            print(f"""question_path_index: {question_path_index} question_file: {question_file}""")
+            
         
         batch_inputs = []
         # only sampling from the seed tasks
@@ -285,6 +315,9 @@ def generate_instruction_following_data(
                 if not input_result:
                     return
                 prompt = encode_prompt_claude_question(input_result["context"], prompt_path)
+            elif is_answer:
+                question = questions.pop(0)
+                prompt = encode_prompt_claude_answer(question, prompt_path)
             else:
                 prompt = encode_prompt_claude(prompt_instructions, prompt_path)
         # print(prompt)
@@ -324,6 +357,10 @@ def generate_instruction_following_data(
                     new_instructions = post_process_claude_question(
                         num_prompt_instructions, result
                     ) 
+                elif is_answer:
+                    new_instructions = post_process_claude_answer(
+                        question, result, prompt
+                    )
                 else:     
                     new_instructions = post_process_claude_response(
                         num_prompt_instructions, result

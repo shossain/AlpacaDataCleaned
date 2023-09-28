@@ -12,6 +12,8 @@ import openai
 import tqdm
 from openai import openai_object
 import copy
+import boto3
+import requests
 
 import anthropic
 
@@ -39,7 +41,7 @@ class OpenAIDecodingArguments(object):
     logprobs: Optional[int] = None
     echo: bool = False
 
-def claude_gpt(prompt: str, model_name="claude-2", max_tokens_to_sample = 4000) -> str:
+def claude_gpt(prompt: str, model_name="claude-2", max_tokens_to_sample = 6000) -> str:
     """
     This function sends a prompt to the Anthropic's Claude API and returns the response.
     
@@ -66,6 +68,92 @@ def claude_gpt(prompt: str, model_name="claude-2", max_tokens_to_sample = 4000) 
         print(f"Error occured invoking Claude: {e}")
         return None
 
+RETRIEVAL_API = 'http://ec2-34-233-120-169.compute-1.amazonaws.com:8080/search'
+
+DYNAMO_TABLE = 'prod-pytho-Documents'
+dynamodb = boto3.resource('dynamodb',region_name='us-east-1')
+
+
+def get_context(question, context_count=5):
+    openai.api_key = os.getenv('OPENAI_KEY')
+
+    embedding = openai.Embedding.create(
+        input=question, model="text-embedding-ada-002"
+    )["data"][0]["embedding"]
+
+    request = {
+        'vector': embedding,
+        'num_results': context_count
+    }
+
+    payload = requests.post(RETRIEVAL_API, json = request).json()
+    vector_raw_ids = payload['ids']
+    similarities = payload['dists']
+    logging.info(f'question: {question}\ndocIds: {vector_raw_ids}\nsimilarities: {similarities}')
+
+    keys = []
+    documents = []
+
+    for i in range(len(vector_raw_ids)):
+        if similarities[i] > .82:
+          keys.append({'docId': str(vector_raw_ids[i])})
+
+    if len(keys) > 0:
+        documents = dynamodb.batch_get_item(
+            RequestItems={
+                DYNAMO_TABLE: {
+                    'Keys': keys
+                }
+            }
+        )['Responses'][DYNAMO_TABLE]
+
+    doc_map = {}
+
+    for doc in documents:          
+        doc_map[doc['docId']] = {
+          'content': doc['content'],
+          'source': doc['source'],
+          'title': doc['title'],
+          'page': doc['page'],
+          'link': doc['link'] + "#page=" + str(doc['page'])
+        }
+    
+    sources_map = {}
+    context = ''
+    context_log = 'CONTEXT\n\n'
+    
+    for i in range(len(vector_raw_ids)):
+        id = str(vector_raw_ids[i])
+        if id in doc_map:
+            doc = doc_map[id]
+            context_log += f'id: {id}\nsimilarity:{similarities[i]}\n{doc["link"]}\n\n'
+            content = doc['content'].strip()
+            ## Remove the first line of the page #
+            first_new_line_index = max(content.find('\n'), 200)
+            content = content[first_new_line_index:]
+            ######################################
+            sources_map[id] = {
+                'id': id,
+                'title': doc['title'],
+                'linkLabel': "Page " + str(doc['page']),
+                'link': doc['link']
+            }
+            
+            context += f"""
+
+<context>
+  {content}
+  <id>{id}</id>
+</context>"""
+
+        else:
+            context_log += f'id: {id}\nsimilarity:{similarities[i]} <dropped>\n\n'            
+
+    return {
+        'sources_map': sources_map,
+        'context': context,
+        'context_log': context_log
+    }
 
 
 def openai_gpt(prompt: str, model_name='gpt-3.5-turbo', max_attempts: int = 3) -> str:
