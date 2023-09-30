@@ -3,7 +3,7 @@ Here are the requirements:
   2. Try to formulate the answer using the set of <context> I have given.
   3. Use your own knowledge to improve the answer.
   4. If you use any of the <context> that I provided, please put their <id> tags at the end of the sentences. 
-  5. Make your answer as detailed as possible.
+  5. Make your answer as detailed and long as possible.
   6. Generate three followup questions inside separate <question> tags.
 
 Now, answer the following question: 

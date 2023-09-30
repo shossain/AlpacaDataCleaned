@@ -93,7 +93,7 @@ def encode_prompt_claude_answer(question, prompt_path):
 
 {open(prompt_path).read()}{question}
 """    
-    return prompt
+    return (prompt, context_dict['context'])
 
 def post_process_gpt3_response(num_prompt_instructions, response):
     splitted_data = re.split(
@@ -135,9 +135,9 @@ def post_process_claude_question(num_prompt_instructions, response):
 
     return result
 
-def post_process_claude_answer(question, response, prompt):
+def post_process_claude_answer(question, response, context):
     return [
-        {"question": question, "answer": response.strip(), "prompt": prompt}
+        {"question": question, "answer": response.strip(), "context": context}
     ]
 
 def find_word_in_string(w, s):
@@ -317,7 +317,7 @@ def generate_instruction_following_data(
                 prompt = encode_prompt_claude_question(input_result["context"], prompt_path)
             elif is_answer:
                 question = questions.pop(0)
-                prompt = encode_prompt_claude_answer(question, prompt_path)
+                prompt, context = encode_prompt_claude_answer(question, prompt_path)
             else:
                 prompt = encode_prompt_claude(prompt_instructions, prompt_path)
         # print(prompt)
@@ -359,7 +359,7 @@ def generate_instruction_following_data(
                     ) 
                 elif is_answer:
                     new_instructions = post_process_claude_answer(
-                        question, result, prompt
+                        question, result, context
                     )
                 else:     
                     new_instructions = post_process_claude_response(

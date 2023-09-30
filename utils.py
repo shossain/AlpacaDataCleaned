@@ -72,7 +72,7 @@ RETRIEVAL_API = 'http://ec2-34-233-120-169.compute-1.amazonaws.com:8080/search'
 EMBEDDING_API = 'http://ec2-34-233-120-169.compute-1.amazonaws.com:9000/embedding'
 
 # change this to remote
-redis_client = redis.Redis(host='localhost', port=6379, decode_responses=True)
+redis_client = redis.Redis(host='ec2-34-233-120-169.compute-1.amazonaws.com', port=6379, decode_responses=True)
 
 def get_embedding(text):
     request = {
