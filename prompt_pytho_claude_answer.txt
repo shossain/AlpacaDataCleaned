@@ -6,4 +6,4 @@ Here are the requirements:
   5. Make your answer as detailed as possible.
   6. Generate three followup questions inside separate <question> tags.
 
-Now, answer the following question:
+Now, answer the following question: 

@@ -297,7 +297,7 @@ def generate_instruction_following_data(
                 return
             
             question_file = os.path.join(input_data_path, question_paths[question_path_index])
-            questions = json.loads(question_file)
+            questions = json.loads(open(question_file, "rb").read())
             print(f"""question_path_index: {question_path_index} question_file: {question_file}""")
             
         

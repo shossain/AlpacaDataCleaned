@@ -8,3 +8,4 @@ pandas
 anthropic
 requests
 boto3
+redis

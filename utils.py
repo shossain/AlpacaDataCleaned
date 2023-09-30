@@ -12,7 +12,7 @@ import openai
 import tqdm
 from openai import openai_object
 import copy
-import boto3
+import redis
 import requests
 
 import anthropic
@@ -69,18 +69,21 @@ def claude_gpt(prompt: str, model_name="claude-2", max_tokens_to_sample = 6000) 
         return None
 
 RETRIEVAL_API = 'http://ec2-34-233-120-169.compute-1.amazonaws.com:8080/search'
+EMBEDDING_API = 'http://ec2-34-233-120-169.compute-1.amazonaws.com:9000/embedding'
 
-DYNAMO_TABLE = 'prod-pytho-Documents'
-dynamodb = boto3.resource('dynamodb',region_name='us-east-1')
+# change this to remote
+redis_client = redis.Redis(host='localhost', port=6379, decode_responses=True)
 
+def get_embedding(text):
+    request = {
+        'message': text,
+        'instruction': 'Represent this sentence for searching relevant passages: '
+    }
+    return requests.post(EMBEDDING_API, json = request).json()["embedding"]
 
 def get_context(question, context_count=5):
-    openai.api_key = os.getenv('OPENAI_KEY')
-
-    embedding = openai.Embedding.create(
-        input=question, model="text-embedding-ada-002"
-    )["data"][0]["embedding"]
-
+    embedding = get_embedding(question)
+    
     request = {
         'vector': embedding,
         'num_results': context_count
@@ -95,35 +98,31 @@ def get_context(question, context_count=5):
     documents = []
 
     for i in range(len(vector_raw_ids)):
-        if similarities[i] > .82:
-          keys.append({'docId': str(vector_raw_ids[i])})
+        if similarities[i] > .5:
+          keys.append(vector_raw_ids[i])
 
     if len(keys) > 0:
-        documents = dynamodb.batch_get_item(
-            RequestItems={
-                DYNAMO_TABLE: {
-                    'Keys': keys
-                }
-            }
-        )['Responses'][DYNAMO_TABLE]
+        documents = redis_client.mget(keys)
 
     doc_map = {}
 
-    for doc in documents:          
-        doc_map[doc['docId']] = {
-          'content': doc['content'],
-          'source': doc['source'],
-          'title': doc['title'],
-          'page': doc['page'],
-          'link': doc['link'] + "#page=" + str(doc['page'])
-        }
+    for i in range(len(keys)):
+        if documents[i]:
+          doc = json.loads(documents[i])         
+          doc_map[keys[i]] = {
+            'content': doc['content'],
+            'source': doc['source'],
+            'title': doc['title'],
+            'page': doc['page'],
+            'link': doc['link'] + "#page=" + str(doc['page'])
+          }
     
     sources_map = {}
     context = ''
     context_log = 'CONTEXT\n\n'
     
     for i in range(len(vector_raw_ids)):
-        id = str(vector_raw_ids[i])
+        id = vector_raw_ids[i]
         if id in doc_map:
             doc = doc_map[id]
             context_log += f'id: {id}\nsimilarity:{similarities[i]}\n{doc["link"]}\n\n'
