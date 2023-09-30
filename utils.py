@@ -41,7 +41,7 @@ class OpenAIDecodingArguments(object):
     logprobs: Optional[int] = None
     echo: bool = False
 
-def claude_gpt(prompt: str, model_name="claude-2", max_tokens_to_sample = 6000) -> str:
+def claude_gpt(prompt: str, model_name="claude-2", max_tokens_to_sample = 1000) -> str:
     """
     This function sends a prompt to the Anthropic's Claude API and returns the response.
     
@@ -61,7 +61,7 @@ def claude_gpt(prompt: str, model_name="claude-2", max_tokens_to_sample = 6000) 
             max_tokens_to_sample=max_tokens_to_sample,
         )
 
-        print(f"********************** Chat Response **********************\n\n{resp.completion}")
+        # print(f"********************** Chat Response **********************\n\n{resp.completion}")
 
         return resp.completion
     except Exception as e:
@@ -128,8 +128,8 @@ def get_context(question, context_count=5):
             context_log += f'id: {id}\nsimilarity:{similarities[i]}\n{doc["link"]}\n\n'
             content = doc['content'].strip()
             ## Remove the first line of the page #
-            first_new_line_index = max(content.find('\n'), 200)
-            content = content[first_new_line_index:]
+            # first_new_line_index = max(content.find('\n'), 200)
+            # content = content[first_new_line_index:]
             ######################################
             sources_map[id] = {
                 'id': id,

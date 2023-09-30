@@ -86,7 +86,7 @@ Now, generate the questions.
 def encode_prompt_claude_answer(question, prompt_path):
     """Encode multiple prompt instructions into a single string."""
     context_dict =  utils.get_context(question)
-    print(context_dict["context_log"])
+    # print(context_dict["context_log"])
 
     prompt = f"""Here is a set of contexts for the question I am going to ask next.
 {context_dict['context']}
