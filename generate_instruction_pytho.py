@@ -23,6 +23,7 @@ import tqdm
 import utils
 from rouge_score import rouge_scorer
 from PyPDF2 import PdfReader
+import anthropic
 
 
 def encode_prompt(prompt_instructions, prompt_path="./prompt_pytho.txt"):
@@ -88,7 +89,7 @@ def encode_prompt_claude_answer(question, prompt_path):
     context_dict =  utils.get_context(question)
     # print(context_dict["context_log"])
 
-    prompt = f"""Here is a set of contexts for the question I am going to ask next.
+    prompt = f"""Here is a set of contexts for the essay you are going to write next.
 {context_dict['context']}
 
 {open(prompt_path).read()}{question}
@@ -336,9 +337,26 @@ def generate_instruction_following_data(
                 prompt=prompt,
             )
         else:    
+            prompt = f"{anthropic.HUMAN_PROMPT} {prompt}{anthropic.AI_PROMPT}"
             result = utils.claude_gpt(
                 prompt=prompt,
             )
+            print("*************************************************************")
+            print(f"Length: {len(result)}")
+            long_result = result
+            
+            try_count = 0
+            while len(result) < 6000 and try_count < 5:
+                prompt += f"{result}{anthropic.HUMAN_PROMPT} The <essay> you just wrote is really short. Make your essay a lot longer.{anthropic.AI_PROMPT}"
+                result = utils.claude_gpt(
+                    prompt=prompt,
+                )
+                print(f"Length: {len(result)}")
+                if len(result) > len(long_result):
+                    long_result = result
+                try_count += 1
+
+            result = long_result
 
         if result is None:
             continue

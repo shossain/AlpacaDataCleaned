@@ -41,7 +41,7 @@ class OpenAIDecodingArguments(object):
     logprobs: Optional[int] = None
     echo: bool = False
 
-def claude_gpt(prompt: str, model_name="claude-2", max_tokens_to_sample = 1000) -> str:
+def claude_gpt(prompt: str, model_name="claude-2", max_tokens_to_sample = 6000) -> str:
     """
     This function sends a prompt to the Anthropic's Claude API and returns the response.
     
@@ -55,7 +55,7 @@ def claude_gpt(prompt: str, model_name="claude-2", max_tokens_to_sample = 1000) 
     # send the prompt to gpt and return the response
     try:
         resp = claude.completions.create(
-            prompt=f"{anthropic.HUMAN_PROMPT} {prompt}{anthropic.AI_PROMPT}",
+            prompt=prompt,
             stop_sequences=[anthropic.HUMAN_PROMPT],
             model=model_name,
             max_tokens_to_sample=max_tokens_to_sample,
