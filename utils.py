@@ -16,6 +16,8 @@ import redis
 import requests
 
 import anthropic
+from tenacity import retry, wait_random_exponential, stop_after_attempt, retry_if_not_exception_type
+
 
 claude = anthropic.Anthropic()
 
@@ -81,6 +83,7 @@ def get_embedding(text):
     }
     return requests.post(EMBEDDING_API, json = request).json()["embedding"]
 
+@retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(6))
 def get_context(question, context_count=5):
     embedding = get_embedding(question)
     
