@@ -233,6 +233,7 @@ def generate_instruction_following_data(
     seed_tasks_path="./seed_tasks_pytho.jsonl",
     is_question=False,
     is_answer=False,
+    question_path_index = -1,
     num_instructions_to_generate=3,
     output_batch_size=100,
     model_name="claude-2.0",
@@ -278,7 +279,6 @@ def generate_instruction_following_data(
         input_result["file_index"] = start_file_index
 
     if is_answer:
-        question_path_index = -1
         question_paths = os.listdir(input_data_path)
         question_paths.sort()
         questions = []
