@@ -342,6 +342,8 @@ def generate_instruction_following_data(
                 prompt=prompt,
             )
             print("*************************************************************")
+            if result is None:
+                continue
             print(f"Length: {len(result)}")
             long_result = result
             
@@ -351,6 +353,8 @@ def generate_instruction_following_data(
                 result = utils.claude_gpt(
                     prompt=prompt,
                 )
+                if result is None:
+                    continue
                 print(f"Length: {len(result)}")
                 if len(result) > len(long_result):
                     long_result = result
