@@ -5,8 +5,8 @@ Here are the requirements:
   4. If you use any of the <context> that I provided, please put their enclosed <id> tags at the end of the sentences. 
   5. Make your essay as long as possible, the longer the better. Wrap it inside <essay> tags.
   6. Do not use the phrase "based on the contexts provided" in your essay.
-  8. Do not repeat the question.
-  7. Generate three followup questions inside three separate <question> tags.
+  7. Do not repeat the question.
+  8. Generate three followup questions inside three separate <question> tags.
 
 Here is a sample essay:
 <essay>
