@@ -45,16 +45,20 @@ class OpenAIDecodingArguments(object):
 
 @retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(6))
 def claude_gpt_retry(prompt: str, model_name="claude-2", max_tokens_to_sample = 6000) -> str:
-    resp = claude.completions.create(
+    stream = claude.completions.create(
         prompt=prompt,
         stop_sequences=[anthropic.HUMAN_PROMPT],
         model=model_name,
+        stream=True,
         max_tokens_to_sample=max_tokens_to_sample,
     )
 
-    # print(f"********************** Chat Response **********************\n\n{resp.completion}")
+    result = ""
+    for completion in stream:
+        result += completion.completion
+    # print(f"********************** Chat Response **********************\n\n{result}")
 
-    return resp.completion
+    return result
 
 def claude_gpt(prompt: str, model_name="claude-2", max_tokens_to_sample = 6000) -> str:
     """
