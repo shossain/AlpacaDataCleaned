@@ -349,16 +349,18 @@ def generate_instruction_following_data(
             
             try_count = 1
             while try_count < 2:
+                time.sleep(3)
                 prompt += f"{result}{anthropic.HUMAN_PROMPT} The <essay> you just wrote is really short. Make your essay a lot longer.{anthropic.AI_PROMPT}"
                 result = utils.claude_gpt(
                     prompt=prompt,
                 )
+                try_count += 1
                 if result is None:
                     continue
                 print(f"Length: {len(result)}")
                 if len(result) > len(long_result):
                     long_result = result
-                try_count += 1
+                
 
             result = long_result
 
