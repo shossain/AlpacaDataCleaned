@@ -43,6 +43,19 @@ class OpenAIDecodingArguments(object):
     logprobs: Optional[int] = None
     echo: bool = False
 
+@retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(6))
+def claude_gpt_retry(prompt: str, model_name="claude-2", max_tokens_to_sample = 6000) -> str:
+    resp = claude.completions.create(
+        prompt=prompt,
+        stop_sequences=[anthropic.HUMAN_PROMPT],
+        model=model_name,
+        max_tokens_to_sample=max_tokens_to_sample,
+    )
+
+    # print(f"********************** Chat Response **********************\n\n{resp.completion}")
+
+    return resp.completion
+
 def claude_gpt(prompt: str, model_name="claude-2", max_tokens_to_sample = 6000) -> str:
     """
     This function sends a prompt to the Anthropic's Claude API and returns the response.
@@ -56,25 +69,16 @@ def claude_gpt(prompt: str, model_name="claude-2", max_tokens_to_sample = 6000) 
     """
     # send the prompt to gpt and return the response
     try:
-        resp = claude.completions.create(
-            prompt=prompt,
-            stop_sequences=[anthropic.HUMAN_PROMPT],
-            model=model_name,
-            max_tokens_to_sample=max_tokens_to_sample,
-        )
-
-        # print(f"********************** Chat Response **********************\n\n{resp.completion}")
-
-        return resp.completion
+        return claude_gpt_retry(prompt, model_name, max_tokens_to_sample)    
     except Exception as e:
         print(f"Error occured invoking Claude: {e}")
         return None
 
-RETRIEVAL_API = 'http://ec2-34-233-120-169.compute-1.amazonaws.com:8080/search'
-EMBEDDING_API = 'http://ec2-34-233-120-169.compute-1.amazonaws.com:9000/embedding'
+RETRIEVAL_API = 'http://34.204.174.75:8080/search'
+EMBEDDING_API = 'http://34.204.174.75:9000/embedding'
 
 # change this to remote
-redis_client = redis.Redis(host='ec2-34-233-120-169.compute-1.amazonaws.com', port=6379, decode_responses=True)
+redis_client = redis.Redis(host='34.204.174.75', port=6379, decode_responses=True)
 
 def get_embedding(text):
     request = {
