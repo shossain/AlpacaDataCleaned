@@ -88,8 +88,8 @@ def encode_prompt_claude_answer(question, prompt_path):
     """Encode multiple prompt instructions into a single string."""
     context_dict =  utils.get_context(question)
     # print(context_dict["context_log"])
-
-    prompt = f"""Here is a set of contexts for the essay you are going to write next.
+    # prompt = f"""Here is a set of contexts for the essay you are going to write next.
+    prompt = f"""Here is a set of contexts for the question I am going to ask next.
 {context_dict['context']}
 
 {open(prompt_path).read()}{question}
@@ -348,7 +348,7 @@ def generate_instruction_following_data(
             long_result = result
             
             try_count = 1
-            while try_count < 2:
+            while try_count < 1:
                 time.sleep(3)
                 prompt += f"{result}{anthropic.HUMAN_PROMPT} The <essay> you just wrote is really short. Make your essay a lot longer.{anthropic.AI_PROMPT}"
                 result = utils.claude_gpt(
